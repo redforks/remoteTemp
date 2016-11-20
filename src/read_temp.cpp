@@ -20,16 +20,14 @@ DeviceAddress addr;
 
 void readTemp() {
   Serial.print(F("Requesting Temperature..."));
-  /* if (!sensors.requestTemperaturesByAddress((uint8_t*)addr)) { */
-  if (!sensors.requestTemperaturesByIndex(0)) {
+  if (!sensors.requestTemperaturesByAddress((uint8_t*)addr)) {
     Serial.println(F("DS18B20 disconnected"));
     return;
   }
 
   Serial.println("DONE");
 
-  /* float tempf = sensors.getTempC((uint8_t*)addr); */
-  float tempf = sensors.getTempCByIndex(0);
+  float tempf = sensors.getTempC((uint8_t*)addr);
   int16_t temp = int16_t(tempf * 10);
   store::setAnalog(idTemp, temp);
 
@@ -46,6 +44,12 @@ void setupReadTemp() {
   }
 
   sensors.setResolution(12);
+
+  // first read always equal to 85.0°C, skip this false reading.
+  if (!sensors.requestTemperaturesByAddress((uint8_t*)addr)) {
+    Serial.println(F("DS18B20 disconnected"));
+    return;
+  }
 
   idTemp = store::defineAnalog();
   
