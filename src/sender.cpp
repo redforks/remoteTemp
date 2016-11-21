@@ -14,12 +14,13 @@ void onTempChange() {
   uint16_t temp = store::analogs[idTemp];
   // 0x21, type is 01, signed int transfered as unsigned int, value id is 01.
   uint32_t token = 0x210000 + temp;
-  mySwitch.send(token, 24);
+  // send as 32bit, receiver will drop first 8bit, for lower transfer error.
+  mySwitch.send(token, 32);
 }
 
 void setupSender() {
   mySwitch.enableTransmit(VW_SEND_PIN);
-  mySwitch.setRepeatTransmit(5);
+  mySwitch.setRepeatTransmit(10);
 
   store::monitorAnalogs(&onTempChange, 1, idTemp);
 }
