@@ -1,4 +1,4 @@
-#include <VirtualWire.h>
+#include <RCSwitch.h>
 #include <core.h>
 
 #include "remoteTemp.h"
@@ -6,39 +6,20 @@
 
 using namespace core;
 
+RCSwitch mySwitch = RCSwitch();
+
 void onTempChange() {
-  int16_t temp = (int16_t)store::analogs[idTemp];
-
-  uint8_t buf[1+1+5+1]; // 0 -12.5\n
-  buf[0] = 0;
-  buf[1] = 32;
-
-  int idx = 2;
-  if (temp < 0) {
-    buf[idx++] = '-';
-    temp = -temp;
-  }
-
-  int d = temp / 100;
-  buf[idx++] = d + '0';
-  temp %= 100;
-
-  d = temp / 10;
-  buf[idx++] = d + '0';
-  temp %= 10;
-
-  buf[idx++] = '.';
-  buf[idx++] = temp + '0';
-
-  vw_send(buf, idx);
-  vw_wait_tx();
+  // a value composed by 3 bit value type, 5 bit value id, 16 bit value.
+  // so 7 types(type 0 reserved), 32 max value for each type.
+  uint16_t temp = store::analogs[idTemp];
+  // 0x21, type is 01, signed int transfered as unsigned int, value id is 01.
+  uint32_t token = 0x210000 + temp;
+  mySwitch.send(token, 24);
 }
 
 void setupSender() {
-  // Initialise the IO and ISR
-  vw_set_ptt_inverted(true); // Required for DR3100
-  vw_set_tx_pin(VW_SEND_PIN);
-  vw_setup(2000);	 // Bits per sec
+  mySwitch.enableTransmit(VW_SEND_PIN);
+  mySwitch.setRepeatTransmit(5);
 
   store::monitorAnalogs(&onTempChange, 1, idTemp);
 }
